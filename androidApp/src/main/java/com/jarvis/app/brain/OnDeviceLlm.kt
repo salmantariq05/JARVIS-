@@ -3,6 +3,7 @@ package com.jarvis.app.brain
 import android.content.Context
 import android.net.Uri
 import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
@@ -43,7 +44,8 @@ class OnDeviceLlm(private val context: Context) : LocalLlm {
                 engine = it
             }
             active.createConversation(ConversationConfig(systemInstruction = Contents.of(system))).use { conversation ->
-                conversation.sendMessage(prompt).toString()
+                val reply = conversation.sendMessage(prompt)
+                reply.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
             }
         }
     }
