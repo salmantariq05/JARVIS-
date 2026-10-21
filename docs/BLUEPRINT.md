@@ -8,7 +8,7 @@ This is the master plan, built from your answers to the 5 question rounds. Each 
 |---|---|---|
 | Tech stack | **Kotlin + Jetpack Compose**, structured as **Kotlin Multiplatform** | Native Android access for the deep features; ~70% of the code reusable on iPhone later |
 | AI brain | **Claude smart mix** (Haiku 5.5 quick, Opus 5.5 deep) **+ offline brain + switch** | Best quality while you have credit; keeps working at $0 without it |
-| Voice lock | **Open-source, offline** (sherpa-onnx), Phase 2 | Free forever, private, no account |
+| Voice lock | **Open-source, offline** (sherpa-onnx + NeMo TitaNet-small), chosen after testing 3 models on real voices | Free forever, private, no account |
 | Wake word | **"Hey Jarvis" and "Jarvis"** both work | Convenience; voice lock blocks other people |
 | Calls | **In-app full-screen call screen** | Free, rings on the lock screen, no phone number needed |
 | Email | **Gmail, Outlook/Hotmail, University** | Gmail API + Microsoft Graph + IMAP fallback |
@@ -71,13 +71,14 @@ flowchart TB
 - [x] Claude smart mix + offline rules brain + on-device LLM + automatic fallback
 - [x] Encrypted API key, Samsung reliability checklist, 34 unit tests
 
-### Phase 2: Always listening, only to you
-- [ ] Foreground "Jarvis is listening" service (Android requires the permanent notification)
-- [ ] Wake words "Hey Jarvis" and "Jarvis" with sherpa-onnx keyword spotting (offline)
-- [ ] Voice lock: enrol ~10 voice samples, speaker verification on every wake (sherpa-onnx speaker embeddings)
-- [ ] Sensitive actions (sending messages) need a confirm phrase or fingerprint
-- [ ] Battery tuning: voice-activity detection gates the heavier models
-- **Lesson topics:** foreground services, audio pipelines, embeddings and cosine similarity, false accept vs false reject trade-off
+### ✅ Phase 2: Always listening, only to you
+- [x] Foreground "Jarvis is listening" service (Android requires the permanent notification)
+- [x] Wake words "Hey Jarvis" and "Jarvis" with sherpa-onnx keyword spotting (offline): 92% detection, 0/100 false alarms in testing
+- [x] Voice lock: 8-sample enrollment, speaker verification on every wake (NeMo TitaNet-small), 3 strictness levels
+- [x] Sessions record `verifiedSpeaker`, so Phase 3 can demand fingerprint or a confirm phrase before sending messages
+- [x] Battery tuning: an adaptive energy gate skips the wake-word model in quiet rooms
+- [x] Supply-chain security: every downloaded model and library is SHA-256 pinned
+- **Lesson:** [docs/lessons/phase-2.md](lessons/phase-2.md) (foreground services, audio DSP, keyword spotting, embeddings, FAR/FRR evaluation)
 
 ### Phase 3: Messages & email
 - [ ] `NotificationListenerService`: WhatsApp, Instagram, Snapchat, Telegram, Discord, SMS, missed calls
@@ -111,7 +112,7 @@ flowchart TB
 |---|---|
 | Claude API, smart mix, daily use | ~$8–15 / month (set a spend limit in the console) |
 | Offline mode | $0 |
-| sherpa-onnx, LiteRT-LM, GitHub Actions (public repo) | $0 |
+| sherpa-onnx (wake word, voice lock), LiteRT-LM, GitHub Actions (public repo) | $0 |
 | Apple developer account (only for iPhone) | $99 / year |
 
 ## 5. Platform rules we design around
