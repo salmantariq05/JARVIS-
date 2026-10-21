@@ -6,6 +6,9 @@ import com.jarvis.shared.JarvisAssistant
 import com.jarvis.shared.brain.BrainKind
 import com.jarvis.shared.brain.Occasion
 import com.jarvis.shared.data.JarvisRepository
+import android.media.AudioManager
+import android.media.ToneGenerator
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +37,7 @@ class ConversationRunner(
     private val ears: SpeechInput,
     private val voice: VoiceOutput,
     private val repository: JarvisRepository,
+    private val mic: MicArbiter,
 ) {
     private val _state = MutableStateFlow(TalkState())
     val state: StateFlow<TalkState> = _state.asStateFlow()
@@ -43,10 +47,14 @@ class ConversationRunner(
     private var chatSession: ConversationSession? = null
     private var lastChatAt = 0L
 
-    /** You tapped the core (or typed). Keeps going while Jarvis asks follow-up questions. */
-    suspend fun chat(typed: String? = null) {
-        val session = chatSession()
-        var text: String = typed ?: listen() ?: return idle()
+    /**
+     * You tapped the core, typed, or said "Hey Jarvis". Keeps going while Jarvis asks follow-up questions.
+     * [verifiedSpeaker] = the voice lock confirmed it's you. [beepFirst] = play the "I'm listening" chime.
+     */
+    suspend fun chat(typed: String? = null, verifiedSpeaker: Boolean = false, beepFirst: Boolean = false) = mic.hold {
+        val session = chatSession(verifiedSpeaker)
+        if (beepFirst) beep()
+        var text: String = typed ?: listen() ?: return@hold idle()
         var turns = 0
         while (text.isNotBlank()) {
             val turn = think { assistant.respond(session, text) } ?: break
@@ -60,10 +68,10 @@ class ConversationRunner(
     }
 
     /** Jarvis called you and you answered. Runs until you say goodbye or go quiet. */
-    suspend fun call(occasion: Occasion, label: String) {
+    suspend fun call(occasion: Occasion, label: String) = mic.hold {
         _state.value = TalkState()
         val session = assistant.newSession(occasion)
-        var turn: AssistantTurn = think { assistant.open(session, label) } ?: return end()
+        var turn: AssistantTurn = think { assistant.open(session, label) } ?: return@hold end()
         speak(turn.speech)
         var silences = 0
         while (!turn.endConversation) {
@@ -91,12 +99,22 @@ class ConversationRunner(
         _state.update { it.copy(phase = Phase.IDLE) }
     }
 
-    private fun chatSession(): ConversationSession {
+    private fun chatSession(verifiedSpeaker: Boolean): ConversationSession {
         val now = System.currentTimeMillis()
         val current = chatSession
-        // A pause longer than 10 minutes starts a fresh conversation.
-        if (current != null && now - lastChatAt < SESSION_TIMEOUT_MS) return current
-        return assistant.newSession(Occasion.CHAT).also { chatSession = it }
+        // A pause longer than 10 minutes (or a change in who's verified) starts a fresh conversation.
+        if (current != null && now - lastChatAt < SESSION_TIMEOUT_MS && current.verifiedSpeaker == verifiedSpeaker) return current
+        return assistant.newSession(Occasion.CHAT, verifiedSpeaker).also { chatSession = it }
+    }
+
+    /** A short chime, much faster than saying "Yes, sir?" out loud. */
+    private suspend fun beep() {
+        runCatching {
+            val tone = ToneGenerator(AudioManager.STREAM_MUSIC, 70)
+            tone.startTone(ToneGenerator.TONE_PROP_ACK, 160)
+            delay(220)
+            tone.release()
+        }
     }
 
     /** null = a real problem (no mic permission...), "" = silence. */

@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jarvis.app.container
 import com.jarvis.app.voice.ConversationRunner
+import com.jarvis.app.voice.wake.ListeningService
+import com.jarvis.app.voice.wake.WakeStatus
 import com.jarvis.shared.brain.Occasion
 import com.jarvis.shared.model.DayRecord
 import com.jarvis.shared.model.JarvisSettings
@@ -38,8 +40,11 @@ data class Dashboard(
  */
 class HudViewModel(app: Application) : AndroidViewModel(app) {
     private val c = app.container
-    val runner = ConversationRunner(c.assistant, c.speechInput, c.voiceOutput, c.repository)
+    val runner: ConversationRunner = c.chatRunner
     private var talkJob: Job? = null
+
+    /** Live status of the background "Hey Jarvis" listener. */
+    val wakeStatus: StateFlow<WakeStatus> = c.wakeStatus
     private val refreshTrigger = MutableStateFlow(0)
 
     private val everyMinute = flow {
@@ -101,16 +106,19 @@ class HudViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun setAlwaysListening(on: Boolean) {
+        viewModelScope.launch {
+            c.repository.updateSettings { it.copy(alwaysListening = on) }
+            if (on) ListeningService.start(getApplication()) else ListeningService.stop(getApplication())
+        }
+    }
+
     fun refresh() {
         refreshTrigger.value++
     }
 
     private fun stopTalking() {
         talkJob?.cancel()
-        runner.stop()
-    }
-
-    override fun onCleared() {
         runner.stop()
     }
 }

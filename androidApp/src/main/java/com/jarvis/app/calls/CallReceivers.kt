@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.jarvis.app.container
+import com.jarvis.app.voice.wake.ListeningService
 import com.jarvis.shared.model.CallKind
 import com.jarvis.shared.model.ScheduledCall
 import kotlinx.coroutines.launch
@@ -62,6 +63,10 @@ class BootReceiver : BroadcastReceiver() {
         container.appScope.launch {
             try {
                 container.assistant.rescheduleAll()
+                // Android doesn't allow starting the microphone right after boot: ask for one tap instead.
+                if (intent.action == Intent.ACTION_BOOT_COMPLETED && container.repository.settings().alwaysListening) {
+                    ListeningService.notifyResumeNeeded(context)
+                }
             } finally {
                 pending.finish()
             }

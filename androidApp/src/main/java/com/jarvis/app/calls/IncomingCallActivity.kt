@@ -122,7 +122,7 @@ data class CallUi(
 
 class CallViewModel(app: Application) : AndroidViewModel(app) {
     private val container = app.container
-    val runner = ConversationRunner(container.assistant, container.speechInput, container.voiceOutput, container.repository)
+    val runner = ConversationRunner(container.assistant, container.speechInput, container.voiceOutput, container.repository, container.mic)
 
     private val _ui = MutableStateFlow(CallUi())
     val ui: StateFlow<CallUi> = _ui.asStateFlow()

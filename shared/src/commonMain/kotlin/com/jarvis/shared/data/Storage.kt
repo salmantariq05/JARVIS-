@@ -11,6 +11,7 @@ interface TextStorage {
     suspend fun read(key: String): String?
     suspend fun write(key: String, value: String)
     suspend fun keys(prefix: String): List<String>
+    suspend fun delete(key: String)
 }
 
 class InMemoryTextStorage : TextStorage {
@@ -20,6 +21,9 @@ class InMemoryTextStorage : TextStorage {
         files[key] = value
     }
     override suspend fun keys(prefix: String): List<String> = files.keys.filter { it.startsWith(prefix) }
+    override suspend fun delete(key: String) {
+        files.remove(key)
+    }
 }
 
 /** Lenient JSON: old files keep loading after we add new fields. */

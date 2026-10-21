@@ -17,14 +17,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jarvis.app.ui.voicelock.EnrollmentScreen
+import com.jarvis.app.ui.voicelock.EnrollmentViewModel
+import com.jarvis.app.voice.wake.ListeningService
+import kotlinx.coroutines.launch
 import com.jarvis.app.ui.hud.HudScreen
 import com.jarvis.app.ui.hud.HudViewModel
 import com.jarvis.app.ui.settings.SettingsScreen
 import com.jarvis.app.ui.settings.SettingsViewModel
 import com.jarvis.app.ui.theme.JarvisTheme
 
-private enum class Screen { HUD, SETTINGS }
+private enum class Screen { HUD, SETTINGS, VOICE_LOCK }
 
 class MainActivity : ComponentActivity() {
     private val hud: HudViewModel by viewModels()
@@ -39,12 +44,27 @@ class MainActivity : ComponentActivity() {
         setContent {
             JarvisTheme {
                 var screen by rememberSaveable { mutableStateOf(Screen.HUD) }
-                BackHandler(enabled = screen != Screen.HUD) { screen = Screen.HUD }
+                BackHandler(enabled = screen != Screen.HUD) {
+                    screen = if (screen == Screen.VOICE_LOCK) Screen.SETTINGS else Screen.HUD
+                }
                 when (screen) {
                     Screen.HUD -> HudScreen(hud, onOpenSettings = { screen = Screen.SETTINGS })
-                    Screen.SETTINGS -> SettingsScreen(viewModel<SettingsViewModel>(), onBack = { screen = Screen.HUD })
+                    Screen.SETTINGS -> SettingsScreen(
+                        viewModel<SettingsViewModel>(),
+                        onBack = { screen = Screen.HUD },
+                        onOpenVoiceLock = { screen = Screen.VOICE_LOCK },
+                    )
+                    Screen.VOICE_LOCK -> EnrollmentScreen(viewModel<EnrollmentViewModel>(), onBack = { screen = Screen.SETTINGS })
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Android only lets "Hey Jarvis" (re)start while Jarvis is on screen, so this is the moment.
+        lifecycleScope.launch {
+            if (container.repository.settings().alwaysListening) ListeningService.start(this@MainActivity)
         }
     }
 
@@ -55,7 +75,10 @@ class MainActivity : ComponentActivity() {
 
     /** "Missed call from Jarvis" -> tap -> hear the debrief right away. */
     private fun handleAction(intent: Intent?) {
-        if (intent?.action == ACTION_DEBRIEF) hud.onDebrief()
+        when (intent?.action) {
+            ACTION_DEBRIEF -> hud.onDebrief()
+            ACTION_TALK -> hud.onCoreTapped()
+        }
     }
 
     private fun requestMissingPermissions() {
@@ -69,6 +92,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_DEBRIEF = "com.jarvis.app.DEBRIEF"
+        const val ACTION_TALK = "com.jarvis.app.TALK"
     }
 }
 

@@ -41,8 +41,12 @@ object CallIds {
     const val TEST = 3
 }
 
-/** One conversation: a tap on the HUD, or one phone call from Jarvis. */
-class ConversationSession(val occasion: Occasion, startedAt: LocalDateTime) {
+/**
+ * One conversation: a tap on the HUD, a wake word, or one phone call from Jarvis.
+ * [verifiedSpeaker] is true when the voice lock confirmed it's you; Phase 3
+ * will require it before sending messages on your behalf.
+ */
+class ConversationSession(val occasion: Occasion, startedAt: LocalDateTime, val verifiedSpeaker: Boolean = false) {
     val logicalDate: LocalDate = LogicalDay.of(startedAt)
     internal val history = mutableListOf<Turn>()
     internal var fallbackAnnounced = false
@@ -67,7 +71,8 @@ class JarvisAssistant(
     private val scheduler: CallScheduler,
     private val clock: JarvisClock,
 ) {
-    fun newSession(occasion: Occasion) = ConversationSession(occasion, clock.now())
+    fun newSession(occasion: Occasion, verifiedSpeaker: Boolean = false) =
+        ConversationSession(occasion, clock.now(), verifiedSpeaker)
 
     /** Jarvis's first words when you answer one of its calls. */
     suspend fun open(session: ConversationSession, label: String = ""): AssistantTurn {

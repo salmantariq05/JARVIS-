@@ -24,6 +24,10 @@ class FileTextStorage(private val root: File) : TextStorage {
         }
     }
 
+    override suspend fun delete(key: String) {
+        withContext(Dispatchers.IO) { File(root, key).delete() }
+    }
+
     override suspend fun keys(prefix: String): List<String> = withContext(Dispatchers.IO) {
         if (!root.exists()) return@withContext emptyList()
         root.walkTopDown()

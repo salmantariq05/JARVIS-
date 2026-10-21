@@ -48,6 +48,8 @@ import com.jarvis.app.ui.components.HudPanel
 import com.jarvis.app.ui.components.hudBackground
 import com.jarvis.app.ui.theme.JarvisColors
 import com.jarvis.shared.model.BrainMode
+import com.jarvis.shared.model.WakePhrase
+import com.jarvis.shared.voice.LockStrictness
 import com.jarvis.shared.time.SpokenTime
 import kotlinx.datetime.LocalTime
 
@@ -61,7 +63,7 @@ private val SPEECH_LANGUAGES = listOf(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenVoiceLock: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -113,6 +115,60 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(12.dp))
                 ClaudeKeyEditor(ui, vm)
+            }
+        }
+
+        item {
+            HudPanel("HEY JARVIS · VOICE LOCK", Modifier.fillMaxWidth(), accent = JarvisColors.Green) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Always listening", color = JarvisColors.Text, style = MaterialTheme.typography.bodyMedium)
+                        Text("Wake Jarvis hands-free, even in your pocket", color = JarvisColors.TextDim, style = MaterialTheme.typography.labelSmall)
+                    }
+                    Switch(
+                        checked = ui.settings.alwaysListening,
+                        onCheckedChange = vm::setAlwaysListening,
+                        colors = SwitchDefaults.colors(checkedTrackColor = JarvisColors.Green, checkedThumbColor = JarvisColors.Background),
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text("Wake phrase", color = JarvisColors.Text, style = MaterialTheme.typography.bodyMedium)
+                WakePhrase.entries.forEach { phrase ->
+                    Choice(phrase.label, ui.settings.wakePhrase == phrase, Modifier.fillMaxWidth().padding(top = 6.dp)) { vm.setWakePhrase(phrase) }
+                }
+                Spacer(Modifier.height(12.dp))
+                val enrolled = ui.voiceEnrolledOn != null
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Voice lock (only your voice)", color = JarvisColors.Text, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            if (enrolled) "Voiceprint recorded on ${ui.voiceEnrolledOn}" else "Not set up yet",
+                            color = if (enrolled) JarvisColors.Green else JarvisColors.Amber,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    Switch(
+                        checked = ui.settings.voiceLockEnabled && enrolled,
+                        onCheckedChange = vm::setVoiceLock,
+                        enabled = enrolled,
+                        colors = SwitchDefaults.colors(checkedTrackColor = JarvisColors.Green, checkedThumbColor = JarvisColors.Background),
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    HudButton(if (enrolled) "RE-ENROLL / TEST" else "SET UP VOICE LOCK", onOpenVoiceLock, accent = JarvisColors.Green)
+                    if (enrolled) HudButton("DELETE VOICEPRINT", vm::deleteVoiceData, accent = JarvisColors.Red)
+                }
+                if (enrolled) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Strictness", color = JarvisColors.Text, style = MaterialTheme.typography.bodyMedium)
+                    LockStrictness.entries.forEach { level ->
+                        Choice(level.label, ui.settings.lockStrictness == level, Modifier.fillMaxWidth().padding(top = 6.dp)) { vm.setLockStrictness(level) }
+                    }
+                }
+                Hint(
+                    "Wait for the chime after \"Hey Jarvis\", then speak. Android shows a green mic dot while Jarvis listens. " +
+                        "Your voiceprint never leaves this phone.",
+                )
             }
         }
 

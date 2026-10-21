@@ -13,6 +13,9 @@ import com.jarvis.shared.brain.Depth
 import com.jarvis.shared.brain.Occasion
 import com.jarvis.shared.model.BrainMode
 import com.jarvis.shared.model.JarvisSettings
+import com.jarvis.shared.model.WakePhrase
+import com.jarvis.app.voice.wake.ListeningService
+import com.jarvis.shared.voice.LockStrictness
 import com.jarvis.shared.time.LogicalDay
 import com.jarvis.shared.time.SystemClock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +37,7 @@ data class SettingsUi(
     val voices: List<String> = emptyList(),
     val checks: List<ReliabilityCheck> = emptyList(),
     val toast: String? = null,
+    val voiceEnrolledOn: String? = null,
 )
 
 class SettingsViewModel(app: Application) : AndroidViewModel(app) {
@@ -51,12 +55,34 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                     modelSizeMb = c.onDeviceLlm.sizeMb(),
                     voices = c.voiceOutput.englishVoices(),
                     checks = Reliability.checks(getApplication()),
+                    voiceEnrolledOn = c.repository.voiceProfile()?.enrolledOn,
                 )
             }
         }
     }
 
     fun setBrainMode(mode: BrainMode) = update { it.copy(brainMode = mode) }
+
+    /** Starting the listener is allowed here because the settings screen is on screen (Android's rule). */
+    fun setAlwaysListening(on: Boolean) {
+        update { it.copy(alwaysListening = on) }
+        if (on) ListeningService.start(getApplication()) else ListeningService.stop(getApplication())
+    }
+
+    fun setWakePhrase(phrase: WakePhrase) = update { it.copy(wakePhrase = phrase) }
+
+    fun setVoiceLock(on: Boolean) = update { it.copy(voiceLockEnabled = on) }
+
+    fun setLockStrictness(strictness: LockStrictness) = update { it.copy(lockStrictness = strictness) }
+
+    fun deleteVoiceData() {
+        viewModelScope.launch {
+            c.repository.deleteVoiceProfile()
+            c.repository.updateSettings { it.copy(voiceLockEnabled = false) }
+            _ui.update { it.copy(toast = "Your voiceprint was deleted from this phone.") }
+            refresh()
+        }
+    }
 
     fun setAddressAs(name: String) = update { it.copy(addressAs = name.trim().ifEmpty { "sir" }) }
 

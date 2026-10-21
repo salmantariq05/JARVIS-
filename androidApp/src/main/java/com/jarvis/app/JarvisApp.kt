@@ -8,6 +8,9 @@ import com.jarvis.app.calls.CallNotifier
 import com.jarvis.app.data.FileTextStorage
 import com.jarvis.app.data.SecretStore
 import com.jarvis.app.system.Connectivity
+import com.jarvis.app.voice.ConversationRunner
+import com.jarvis.app.voice.MicArbiter
+import com.jarvis.app.voice.wake.WakeStatus
 import com.jarvis.app.voice.SpeechInput
 import com.jarvis.app.voice.VoiceOutput
 import com.jarvis.shared.JarvisAssistant
@@ -19,6 +22,7 @@ import com.jarvis.shared.time.SystemClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -64,4 +68,13 @@ class AppContainer(app: Application) {
 
     val speechInput by lazy { SpeechInput(app) }
     val voiceOutput by lazy { VoiceOutput(app) }
+
+    /** Whoever wants the microphone asks here first (see MicArbiter). */
+    val mic = MicArbiter()
+
+    /** One shared chat: started by the HUD or by "Hey Jarvis" in the background, shown on the HUD either way. */
+    val chatRunner by lazy { ConversationRunner(assistant, speechInput, voiceOutput, repository, mic) }
+
+    /** What the background listener is doing, for the HUD. */
+    val wakeStatus = MutableStateFlow(WakeStatus())
 }

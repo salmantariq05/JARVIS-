@@ -4,6 +4,7 @@ import com.jarvis.shared.model.CallKind
 import com.jarvis.shared.model.DayRecord
 import com.jarvis.shared.model.JarvisSettings
 import com.jarvis.shared.model.ScheduledCall
+import com.jarvis.shared.voice.VoiceProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,6 +66,19 @@ class JarvisRepository(private val storage: TextStorage) {
         removed
     }
 
+    suspend fun voiceProfile(): VoiceProfile? = mutex.withLock {
+        storage.read(VOICE_PROFILE)?.let { runCatching { JarvisJson.decodeFromString(VoiceProfile.serializer(), it) }.getOrNull() }
+    }
+
+    suspend fun saveVoiceProfile(profile: VoiceProfile) = mutex.withLock {
+        save(VOICE_PROFILE, VoiceProfile.serializer(), profile)
+    }
+
+    suspend fun deleteVoiceProfile() = mutex.withLock {
+        storage.delete(VOICE_PROFILE)
+        _version.value++
+    }
+
     private suspend fun loadDay(date: LocalDate): DayRecord = load(dayKey(date), DayRecord.serializer()) { DayRecord(date) }
 
     private suspend fun loadCalls(): List<ScheduledCall> = load(CALLS, callsSerializer) { emptyList() }
@@ -92,6 +106,7 @@ class JarvisRepository(private val storage: TextStorage) {
         const val FIRST_ONE_OFF_CALL_ID = 100
         private const val SETTINGS = "settings.json"
         private const val CALLS = "calls.json"
+        private const val VOICE_PROFILE = "voice/profile.json"
         private const val DAYS_PREFIX = "days/"
         private val callsSerializer = ListSerializer(ScheduledCall.serializer())
     }

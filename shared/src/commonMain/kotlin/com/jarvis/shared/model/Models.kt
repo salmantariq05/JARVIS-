@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.serialization.Serializable
+import com.jarvis.shared.voice.LockStrictness
 
 /** What kind of thing you told Jarvis about. */
 @Serializable
@@ -70,4 +71,17 @@ data class JarvisSettings(
     /** BCP-47 tag for speech recognition. en-IN copes best with Roman Urdu/Pashto mixed in. */
     val speechLanguage: String = "en-IN",
     val voiceName: String? = null,
+    /** Phase 2: keep listening for the wake word in the background. */
+    val alwaysListening: Boolean = false,
+    val wakePhrase: WakePhrase = WakePhrase.BOTH,
+    /** Only wake for the enrolled voice (needs a VoiceProfile). */
+    val voiceLockEnabled: Boolean = false,
+    val lockStrictness: LockStrictness = LockStrictness.BALANCED,
 )
+
+/** Which phrases wake Jarvis. */
+@Serializable
+enum class WakePhrase(val label: String) {
+    BOTH("\"Hey Jarvis\" or \"Jarvis\""),
+    HEY_JARVIS("\"Hey Jarvis\" only (fewer accidental wakes)"),
+}

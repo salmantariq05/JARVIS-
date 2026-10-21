@@ -47,6 +47,7 @@ import com.jarvis.app.ui.components.hudBackground
 import com.jarvis.app.ui.theme.JarvisColors
 import com.jarvis.app.voice.Phase
 import com.jarvis.app.voice.TalkState
+import com.jarvis.app.voice.wake.WakeStatus
 import com.jarvis.shared.model.CallKind
 import com.jarvis.shared.model.LogCategory
 import com.jarvis.shared.model.PlanStatus
@@ -62,6 +63,7 @@ fun HudScreen(vm: HudViewModel, onOpenSettings: () -> Unit) {
     val level by vm.runner.level.collectAsStateWithLifecycle()
     val partial by vm.runner.partial.collectAsStateWithLifecycle()
     val dash by vm.dashboard.collectAsStateWithLifecycle()
+    val wake by vm.wakeStatus.collectAsStateWithLifecycle()
 
     LifecycleResumeEffect(Unit) {
         vm.refresh()
@@ -78,6 +80,7 @@ fun HudScreen(vm: HudViewModel, onOpenSettings: () -> Unit) {
     ) {
         item { Header(talk, dash) }
         item { ReactorBlock(talk, level, onTap = vm::onCoreTapped) }
+        item { WakePanel(wake, dash.settings.alwaysListening, vm::setAlwaysListening) }
         item { TranscriptPanel(talk, partial) }
         item { CommandInput(onSend = vm::onTyped) }
         item {
@@ -144,6 +147,29 @@ private fun ReactorBlock(talk: TalkState, level: Float, onTap: () -> Unit) {
             letterSpacing = 3.sp,
         )
         VoiceWave(talk.phase, level, Modifier.fillMaxWidth().height(40.dp))
+    }
+}
+
+@Composable
+private fun WakePanel(wake: WakeStatus, enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    val accent = if (wake.listening) JarvisColors.Green else JarvisColors.TextDim
+    HudPanel("HEY JARVIS", Modifier.fillMaxWidth(), accent = accent) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    when {
+                        wake.listening && wake.voiceLock -> "● LISTENING · VOICE LOCK ON"
+                        wake.listening -> "● LISTENING · ANYONE CAN WAKE ME"
+                        enabled -> "○ STARTING…"
+                        else -> "○ OFF · TAP THE CORE TO TALK"
+                    },
+                    color = accent,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                wake.lastEvent?.let { Text(it, color = JarvisColors.TextDim, style = MaterialTheme.typography.labelSmall) }
+            }
+            HudButton(if (enabled) "TURN OFF" else "TURN ON", { onToggle(!enabled) }, accent = accent)
+        }
     }
 }
 
@@ -333,7 +359,6 @@ private fun CallsPanel(dash: Dashboard, onCancel: (Int) -> Unit) {
 private fun RoadmapPanel() {
     HudPanel("COMING ONLINE", Modifier.fillMaxWidth(), accent = JarvisColors.TextDim) {
         listOf(
-            "PHASE 2" to "\"Hey Jarvis\" wake word + voice lock (only you)",
             "PHASE 3" to "WhatsApp · Instagram · Snapchat · Telegram · Gmail · Outlook",
             "PHASE 4" to "Study cards, quizzes, focus mode, Classroom deadlines",
             "PHASE 5" to "Morning briefing, phone control, developer mode, iPhone",

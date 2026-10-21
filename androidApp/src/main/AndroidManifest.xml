@@ -17,6 +17,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Re-arming calls after the phone restarts -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Phase 2: "Hey Jarvis" listens in the background through a microphone foreground service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <!-- Asking Samsung's battery saver to leave Jarvis alone -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
@@ -59,6 +62,11 @@
             android:showWhenLocked="true"
             android:taskAffinity="com.jarvis.app.call"
             android:turnScreenOn="true" />
+
+        <service
+            android:name=".voice.wake.ListeningService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
 
         <receiver
             android:name=".calls.CallAlarmReceiver"
