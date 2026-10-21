@@ -31,7 +31,7 @@ A personal AI voice assistant for Android: it **calls you** at the times you cho
 
 ## 📲 Install on your Samsung (5 minutes)
 
-1. On your phone, open **[Releases → jarvis-latest](../../releases/tag/jarvis-latest)** and tap **`jarvis.apk`**.
+1. On your phone, open **[Releases → jarvis-latest](../../releases/tag/jarvis-latest)** and tap **`jarvis.apk`** (about 80 MB, Android 12+).
 2. When asked, allow your browser or **My Files** to *install unknown apps*. If Play Protect warns about an "unrecognised developer", tap **More details → Install anyway** (it's your own app).
 3. Open Jarvis and allow **Microphone** and **Notifications**.
 4. Tap **SETUP** and work through it top to bottom:

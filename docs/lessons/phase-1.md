@@ -113,7 +113,7 @@ Four techniques used in `ClaudeBrain.kt` and `Prompts.kt`:
 **One sentence:** a robot builds, tests and publishes your app on every push.
 **In Jarvis:** `.github/workflows/build.yml`: checkout → Java 21 → run 34 tests → build the APK → sign it → publish it as the **jarvis-latest** release.
 **Signing:** Android only installs updates signed with the *same key*. Jarvis uses a shared dev key so updates "just work". For a private key: run `keytool -genkeypair -keystore release.jks -alias jarvis -keyalg RSA -validity 10000`, base64 it, and add repository secrets `JARVIS_KEYSTORE_BASE64`, `JARVIS_KEYSTORE_PASSWORD`, `JARVIS_KEY_ALIAS` and `JARVIS_KEY_PASSWORD`. Switching keys means uninstalling once.
-**Real story:** this machine couldn't reach Google's download servers, so GitHub's build machines compiled the Android app and reported the errors back. A remote CI loop like this is how many teams work.
+**Real story:** the machine Jarvis was written on couldn't reach Google's Android download servers, so it could only test the `shared/` brain locally (34 tests). GitHub's build machines compiled the Android half. The first Android build passed with zero compile errors, because the risky parts had been checked first: the brain was unit-tested, and the Claude SDK and LiteRT-LM calls were checked against the real library classes and source code. **Verify early, where it's cheap.**
 
 ---
 
