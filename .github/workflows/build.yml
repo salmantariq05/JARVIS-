@@ -1,0 +1,78 @@
+# CI/CD: every push runs the tests, builds a signed APK, and publishes it
+# as the "jarvis-latest" release so you can download it straight to your phone.
+name: Build Jarvis
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Optional: your private signing key (see docs/lessons/phase-1.md). Empty = shared dev key.
+      KEYSTORE_B64: ${{ secrets.JARVIS_KEYSTORE_BASE64 }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle (with caching)
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Unit tests (Jarvis's brain)
+        run: ./gradlew :shared:jvmTest --stacktrace
+
+      - name: Use private signing key
+        if: env.KEYSTORE_B64 != ''
+        env:
+          KS_PASS: ${{ secrets.JARVIS_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.JARVIS_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.JARVIS_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          {
+            echo "JARVIS_KEYSTORE_FILE=$RUNNER_TEMP/release.keystore"
+            echo "JARVIS_KEYSTORE_PASSWORD=$KS_PASS"
+            echo "JARVIS_KEY_ALIAS=$KS_ALIAS"
+            echo "JARVIS_KEY_PASSWORD=$KEY_PASS"
+          } >> "$GITHUB_ENV"
+
+      - name: Build the APK
+        run: ./gradlew :androidApp:assembleRelease --stacktrace
+
+      - name: Name the APK
+        run: cp androidApp/build/outputs/apk/release/androidApp-release.apk jarvis.apk
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: jarvis-apk
+          path: jarvis.apk
+
+      - name: Publish "jarvis-latest" release (download on your phone)
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete jarvis-latest --yes --cleanup-tag || true
+          gh release create jarvis-latest jarvis.apk \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Jarvis · latest build #${{ github.run_number }}" \
+            --notes "Built from \`${GITHUB_SHA::7}\` on branch \`${{ github.ref_name }}\`. On your phone: tap **jarvis.apk** below, then Install. See README for first-time setup."

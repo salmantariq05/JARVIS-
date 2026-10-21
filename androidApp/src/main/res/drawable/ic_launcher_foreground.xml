@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arc reactor: outer ring, eight spokes, inner ring, triangle and glowing core. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,25 A29,29 0 1,1 53.99,25 Z"
+        android:strokeWidth="3"
+        android:strokeColor="#22E6FF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54.00,34.00 L54.00,29.00 M68.14,39.86 L71.68,36.32 M74.00,54.00 L79.00,54.00 M68.14,68.14 L71.68,71.68 M54.00,74.00 L54.00,79.00 M39.86,68.14 L36.32,71.68 M34.00,54.00 L29.00,54.00 M39.86,39.86 L36.32,36.32"
+        android:strokeLineCap="round"
+        android:strokeWidth="3"
+        android:strokeColor="#22E6FF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,36 A18,18 0 1,1 53.99,36 Z"
+        android:strokeWidth="2"
+        android:strokeColor="#7FF3FF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,40 L66.1,61 L41.9,61 Z"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2"
+        android:strokeColor="#22E6FF" />
+    <path
+        android:fillColor="#DFFDFF"
+        android:pathData="M54,47 A7,7 0 1,1 53.99,47 Z" />
+</vector>

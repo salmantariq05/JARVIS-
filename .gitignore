@@ -1,0 +1,20 @@
+# Gradle / build output
+.gradle/
+build/
+.kotlin/
+local.properties
+
+# IDEs
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Never commit secrets or personal data
+*.env
+secrets.properties
+release.keystore
+*.jks
+!androidApp/jarvis-dev.keystore

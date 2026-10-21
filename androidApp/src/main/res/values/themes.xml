@@ -1,0 +1,7 @@
+<resources>
+    <!-- Platform theme: no extra library needed. Compose draws everything else. -->
+    <style name="Theme.Jarvis" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/jarvis_background</item>
+        <item name="android:colorAccent">@color/jarvis_cyan</item>
+    </style>
+</resources>
